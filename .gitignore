@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-electron/
+release/
+build/dev/
+build/runtime/
+.DS_Store
+*.log
+.codex/
+
+# Private reference material used during the initial product study.
+docs/

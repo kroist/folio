@@ -1,0 +1,51 @@
+/* eslint-disable react-refresh/only-export-components */
+import {
+  Archive,
+  BookOpen,
+  Bookmark,
+  BriefcaseBusiness,
+  ChevronDown,
+  Code2,
+  FileText,
+  Folder,
+  Home,
+  Inbox,
+  Lightbulb,
+  Menu,
+  MoreHorizontal,
+  PanelLeftClose,
+  PenLine,
+  Pin,
+  Plus,
+  Search,
+  Star,
+  Tags,
+  Trash2,
+} from 'lucide-react'
+
+export const icons = {
+  archive: Archive,
+  'book-open': BookOpen,
+  bookmark: Bookmark,
+  briefcase: BriefcaseBusiness,
+  code: Code2,
+  folder: Folder,
+  home: Home,
+  lightbulb: Lightbulb,
+  star: Star,
+}
+
+export {
+  ChevronDown,
+  FileText,
+  Inbox,
+  Menu,
+  MoreHorizontal,
+  PanelLeftClose,
+  PenLine,
+  Pin,
+  Plus,
+  Search,
+  Tags,
+  Trash2,
+}

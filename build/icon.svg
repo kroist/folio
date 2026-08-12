@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">Folio app icon</title>
+  <desc id="description">A dimensional folded-paper letter F resting on a folio of layered pages.</desc>
+  <defs>
+    <linearGradient id="tile" x1="152" y1="114" x2="871" y2="913" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#42577F"/>
+      <stop offset="0.48" stop-color="#24395F"/>
+      <stop offset="1" stop-color="#122743"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(722 210) rotate(132) scale(570 500)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#718AB0" stop-opacity="0.62"/>
+      <stop offset="1" stop-color="#718AB0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rearPage" x1="345" y1="264" x2="704" y2="778" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#AEEAE1"/>
+      <stop offset="1" stop-color="#55BFB9"/>
+    </linearGradient>
+    <linearGradient id="middlePage" x1="322" y1="226" x2="708" y2="804" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DBE4EA"/>
+      <stop offset="1" stop-color="#A9BBC7"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="337" y1="220" x2="713" y2="800" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.7" stop-color="#F7F5EE"/>
+      <stop offset="1" stop-color="#E7E9E6"/>
+    </linearGradient>
+    <linearGradient id="paperEdge" x1="347" y1="721" x2="686" y2="780" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B4C0C8"/>
+      <stop offset="0.5" stop-color="#E6E8E5"/>
+      <stop offset="1" stop-color="#AAB8C1"/>
+    </linearGradient>
+    <linearGradient id="ribbon" x1="384" y1="317" x2="663" y2="682" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#64E2D0"/>
+      <stop offset="0.44" stop-color="#30C6B8"/>
+      <stop offset="1" stop-color="#129C9B"/>
+    </linearGradient>
+    <linearGradient id="ribbonSide" x1="386" y1="360" x2="459" y2="706" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1DB3AA"/>
+      <stop offset="1" stop-color="#087A82"/>
+    </linearGradient>
+    <linearGradient id="ribbonHighlight" x1="431" y1="330" x2="431" y2="691" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BCFFF3" stop-opacity="0.75"/>
+      <stop offset="0.32" stop-color="#7CF2DE" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#7CF2DE" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="foldFace" x1="645" y1="267" x2="731" y2="356" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EFF4F3"/>
+      <stop offset="1" stop-color="#BDD4D7"/>
+    </linearGradient>
+    <filter id="tileShadow" x="45" y="44" width="934" height="938" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="26" stdDeviation="30" flood-color="#06101E" flood-opacity="0.34"/>
+    </filter>
+    <filter id="folioShadow" x="218" y="144" width="620" height="754" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="24" stdDeviation="25" flood-color="#07182C" flood-opacity="0.46"/>
+    </filter>
+    <filter id="ribbonShadow" x="344" y="276" width="377" height="474" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="13" stdDeviation="12" flood-color="#0A3442" flood-opacity="0.36"/>
+    </filter>
+    <clipPath id="tileClip">
+      <rect x="88" y="72" width="848" height="848" rx="194"/>
+    </clipPath>
+  </defs>
+
+  <g filter="url(#tileShadow)">
+    <rect x="88" y="72" width="848" height="848" rx="194" fill="url(#tile)"/>
+    <g clip-path="url(#tileClip)">
+      <rect x="88" y="72" width="848" height="848" fill="url(#glow)"/>
+      <path d="M70 759C260 601 420 734 591 606C728 504 807 316 966 268V952H70V759Z" fill="#0A213C" opacity="0.34"/>
+      <path d="M763 63C682 229 735 388 939 443" fill="none" stroke="#91A6C5" stroke-opacity="0.1" stroke-width="106" stroke-linecap="round"/>
+      <circle cx="172" cy="216" r="10" fill="#C4FFF4" opacity="0.34"/>
+      <circle cx="820" cy="700" r="7" fill="#C4FFF4" opacity="0.3"/>
+    </g>
+    <rect x="89.5" y="73.5" width="845" height="845" rx="192.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="3"/>
+  </g>
+
+  <g filter="url(#folioShadow)">
+    <path d="M314 289C313 259 337 233 367 231L643 210L737 294L755 704C757 744 727 778 688 781L381 806C341 809 307 778 305 739L284 352C282 320 295 299 314 289Z" fill="url(#rearPage)"/>
+    <path d="M332 256C332 224 358 199 390 201L659 216L743 310L724 742C722 782 688 812 648 810L360 794C320 792 290 758 292 718L311 293C312 276 320 263 332 256Z" fill="url(#middlePage)"/>
+    <path d="M337 269C337 236 364 209 397 209H638L733 304V722C733 761 701 793 662 793H408C369 793 337 761 337 722V269Z" fill="url(#paper)"/>
+    <path d="M337 707C427 728 643 729 733 704V722C733 761 701 793 662 793H408C369 793 337 761 337 722V707Z" fill="url(#paperEdge)" opacity="0.68"/>
+    <path d="M638 209L733 304H680C657 304 638 285 638 262V209Z" fill="url(#foldFace)"/>
+    <path d="M638 209V261C638 285 657 304 681 304H733" fill="none" stroke="#A7BEC3" stroke-width="5" stroke-linejoin="round"/>
+  </g>
+
+  <g filter="url(#ribbonShadow)">
+    <path d="M393 350C393 332 408 317 426 317H653C672 317 687 332 687 351V375C687 394 672 409 653 409H476V478H598C617 478 632 493 632 512V532C632 551 617 566 598 566H476V684C476 703 461 718 442 718H427C408 718 393 703 393 684V350Z" fill="url(#ribbon)"/>
+    <path d="M393 350C393 332 408 317 426 317H446V718H427C408 718 393 703 393 684V350Z" fill="url(#ribbonSide)" opacity="0.56"/>
+    <path d="M413 348C413 340 420 333 428 333H641" fill="none" stroke="#C8FFF5" stroke-opacity="0.68" stroke-width="7" stroke-linecap="round"/>
+    <path d="M419 353V675" fill="none" stroke="url(#ribbonHighlight)" stroke-width="7" stroke-linecap="round"/>
+    <path d="M476 409V478" fill="none" stroke="#087B82" stroke-opacity="0.48" stroke-width="7"/>
+    <path d="M476 566L445 538L476 478" fill="#0A858A" opacity="0.32"/>
+  </g>
+
+  <path d="M524 626H648" stroke="#96A7AE" stroke-width="18" stroke-linecap="round" opacity="0.72"/>
+  <path d="M524 668H616" stroke="#A7B5BA" stroke-width="18" stroke-linecap="round" opacity="0.6"/>
+</svg>
