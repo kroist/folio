@@ -1,11 +1,12 @@
 import { watch, type FSWatcher } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
-import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, shell } from 'electron'
+import { app, autoUpdater, BrowserWindow, clipboard, dialog, ipcMain, Menu, shell } from 'electron'
 import type { IpcMainInvokeEvent, MenuItemConstructorOptions } from 'electron'
 import { QmdSearchService } from './search'
 import { buildMcpSetupInfo } from './mcp-config'
 import { LibraryStore } from './store'
+import { createFolioUpdater, type FolioUpdater } from './updater'
 import { VaultLocations } from './vault'
 import type {
   CreateNoteInput,
@@ -25,6 +26,7 @@ let settingsWindow: BrowserWindow | null = null
 let library: LibraryStore
 let search: QmdSearchService
 let vaultLocations: VaultLocations
+let updater: FolioUpdater | undefined
 let vaultWatcher: FSWatcher | null = null
 let vaultRefreshTimer: NodeJS.Timeout | null = null
 let ignoreVaultEventsUntil = 0
@@ -232,6 +234,11 @@ const installApplicationMenu = (): void => {
         { role: 'about' },
         { type: 'separator' },
         {
+          label: 'Check for Updates…',
+          click: () => updater?.checkForUpdates(true),
+        },
+        { type: 'separator' },
+        {
           label: 'Settings…',
           accelerator: 'CommandOrControl+,',
           click: () => void openSettingsWindow('appearance'),
@@ -262,6 +269,16 @@ app.whenReady().then(async () => {
   await vaultLocations.migrateLegacySearchIndex(vaultPath)
   search = createSearchService()
   startVaultWatcher()
+  updater = createFolioUpdater({
+    autoUpdater,
+    dialog,
+    getWindow: () => mainWindow,
+    prepareToRestart: prepareMainEditor,
+    isPackaged: app.isPackaged,
+    platform: process.platform,
+    arch: process.arch,
+    version: app.getVersion(),
+  })
   installApplicationMenu()
 
   ipcMain.on('vault:prepared', (event, id: number, error?: string) => {
@@ -556,6 +573,7 @@ app.whenReady().then(async () => {
   })
 
   await createWindow()
+  updater.start()
 
   app.on('activate', async () => {
     if (!mainWindow || mainWindow.isDestroyed()) await createWindow()
@@ -567,6 +585,7 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
+  updater?.stop()
   stopVaultWatcher()
   void search?.close()
 })

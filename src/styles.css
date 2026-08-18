@@ -719,7 +719,9 @@ button { color: inherit; }
 
 .notes-pane {
   display: flex;
+  min-height: 0;
   flex-direction: column;
+  overflow: hidden;
   background: var(--list);
   border-right: 1px solid var(--line);
 }
@@ -792,7 +794,14 @@ kbd { border: 0; color: var(--text-faint); background: transparent; font-family:
 
 @keyframes search-spin { to { transform: rotate(360deg); } }
 
-.note-list { flex: 1; min-height: 0; padding: 0 8px 16px; overflow-y: auto; }
+.note-list {
+  min-height: 0;
+  flex: 1 1 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding: 0 8px 16px;
+  -webkit-app-region: no-drag;
+}
 
 .note-card {
   position: relative;

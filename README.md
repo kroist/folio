@@ -4,13 +4,14 @@ A calm, local-first Markdown workspace for macOS. Notes are ordinary Markdown fi
 
 ## Download
 
-Download **Folio 1.0.0 for Apple Silicon** from the [GitHub release](https://github.com/kroist/folio/releases/tag/v1.0.0). Open the DMG and drag Folio into Applications.
+Download **Folio 1.0.1 for Apple Silicon** from the [GitHub release](https://github.com/kroist/folio/releases/tag/v1.0.1). Open the DMG and drag Folio into Applications.
 
-The 1.0.0 build is ad-hoc signed but not Apple-notarized. On first launch, macOS may require you to control-click Folio, choose **Open**, and confirm. Intel Macs are not supported by this build.
+The 1.0.1 build is ad-hoc signed but not Apple-notarized. On first launch, macOS may require you to control-click Folio, choose **Open**, and confirm. Intel Macs are not supported by this build.
 
 ## Features
 
 - A native-feeling three-pane Electron shell
+- Background update checks with a native restart prompt for signed release builds
 - Local note storage as atomic, portable Markdown files
 - CodeMirror 6 Markdown editing
 - Edit, split, and preview modes
@@ -92,6 +93,10 @@ To build the Apple Silicon macOS app, DMG, and ZIP locally:
 npm run package:mac
 npm run smoke:package:mac
 ```
+
+The complete versioning, verification, tagging, and GitHub publishing checklist is in [RELEASING.md](./RELEASING.md).
+
+Packaged macOS builds check the public GitHub Releases feed shortly after launch and every six hours. **Folio → Check for Updates…** runs the same check manually. The updater requires releases signed consistently with an Apple Developer ID; ad-hoc-signed local builds can compile the integration but cannot provide reliable in-place updates.
 
 ## Editor shortcuts
 

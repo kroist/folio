@@ -1,6 +1,6 @@
 {
   "name": "folio-markdown-editor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "A calm, local-first Markdown workspace for macOS.",
   "license": "MIT",
@@ -25,7 +25,7 @@
   "build": {
     "appId": "com.folio.markdown-editor",
     "productName": "Folio",
-    "artifactName": "Folio-${version}-${arch}.${ext}",
+    "artifactName": "Folio-${version}-mac-${arch}.${ext}",
     "directories": {
       "output": "release"
     },

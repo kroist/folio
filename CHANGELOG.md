@@ -2,6 +2,16 @@
 
 All notable changes to Folio are documented here.
 
+## [1.0.1] - 2026-08-18
+
+### Fixed
+
+- Restored trackpad scrolling in the notes list on macOS
+
+### Added
+
+- Automatic update checks through Folio's public GitHub Releases, with a manual check command and restart prompt
+
 ## [1.0.0] - 2026-08-12
 
 Folio's first public release.
@@ -17,4 +27,5 @@ Folio's first public release.
 - Bundled MCP server with guarded read/write tools for AI agents
 - Apple Silicon macOS packaging as a DMG and ZIP
 
+[1.0.1]: https://github.com/kroist/folio/releases/tag/v1.0.1
 [1.0.0]: https://github.com/kroist/folio/releases/tag/v1.0.0
