@@ -38,6 +38,8 @@
   --preview-code-block: #eaeaea;
   --preview-code-text: #202020;
   --preview-highlight: #fff8c5;
+  --find-match: #ffd33d8c;
+  --find-match-current: #ff9500;
   --toolbar-bg: #202020f7;
   --toolbar-text: #ffffff;
   --shadow-color: #20202026;
@@ -880,10 +882,46 @@ kbd { border: 0; color: var(--text-faint); background: transparent; font-family:
 .writing-area.mode-preview { grid-template-columns: minmax(0, 1fr); }
 .writing-area.mode-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .editor-surface,
+.preview-pane,
 .preview-surface { min-width: 0; min-height: 0; }
-.editor-surface { overflow: hidden; cursor: text; }
-.preview-surface { overflow: auto; overscroll-behavior: contain; }
+.editor-surface,
+.preview-pane { position: relative; overflow: hidden; }
+.editor-surface { cursor: text; }
+.preview-surface { height: 100%; overflow: auto; overscroll-behavior: contain; }
 .mode-split .editor-surface { border-right: 1px solid var(--line); }
+
+.document-find-bar {
+  position: absolute;
+  z-index: 70;
+  top: 10px;
+  right: 12px;
+  display: grid;
+  grid-template-columns: auto minmax(90px, 1fr) auto repeat(3, 25px);
+  align-items: center;
+  gap: 3px;
+  width: min(350px, calc(100% - 24px));
+  height: 36px;
+  padding: 4px 5px 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-overlay);
+  color: var(--text-muted);
+  box-shadow: 0 7px 22px var(--shadow-color);
+  cursor: default;
+  font-family: var(--font-sans);
+  -webkit-app-region: no-drag;
+}
+.document-find-bar:focus-within { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.document-find-bar > svg { margin-right: 3px; color: var(--text-faint); }
+.document-find-bar input { min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text-primary); font: inherit; font-size: 11px; }
+.document-find-bar input::placeholder { color: var(--text-faint); }
+.document-find-count { min-width: 43px; color: var(--text-faint); font-size: 9px; text-align: right; white-space: nowrap; }
+.document-find-bar button { display: grid; width: 25px; height: 25px; place-items: center; padding: 0; border: 0; border-radius: 5px; background: transparent; color: var(--text-secondary); }
+.document-find-bar button:hover:not(:disabled) { background: var(--surface-hover); color: var(--text-primary); }
+.document-find-bar button:disabled { opacity: 0.3; }
+
+.document-find-match { border-radius: 2px; background: var(--find-match); color: inherit; }
+.document-find-match-current { background: var(--find-match-current); color: #202020; box-shadow: inset 0 0 0 1px color-mix(in srgb, #202020 22%, transparent); }
 
 .editor-surface .folio-editor { height: 100%; min-height: 0; overflow: hidden; }
 .editor-surface .cm-editor { height: 100%; min-height: 0; background: transparent; }
@@ -1022,6 +1060,8 @@ kbd { border: 0; color: var(--text-faint); background: transparent; font-family:
 .folio-image-controls input:focus { border-color: var(--accent); }
 .markdown-preview input[type='checkbox'] { accent-color: var(--accent); }
 .markdown-preview mark { padding: 0.08em 0.16em; border-radius: 3px; background: var(--preview-highlight); color: inherit; }
+.markdown-preview mark.document-find-match { padding: 0; background: var(--find-match); }
+.markdown-preview mark.document-find-match-current { background: var(--find-match-current); color: #202020; }
 .preview-placeholder { color: var(--text-faint); font-style: italic; }
 .attachment-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 34px; padding: 6px 13px; border-top: 1px solid color-mix(in srgb, var(--danger) 35%, var(--line)); background: var(--danger-soft); color: var(--danger); font-size: 10px; }
 .attachment-error button { padding: 3px 7px; border: 1px solid currentColor; border-radius: 5px; background: transparent; color: inherit; font-size: 9px; }

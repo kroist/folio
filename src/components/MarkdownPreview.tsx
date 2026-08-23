@@ -2,14 +2,18 @@ import ReactMarkdown from 'react-markdown'
 import rehypeHighlight from 'rehype-highlight'
 import remarkGfm from 'remark-gfm'
 import { Link2 } from 'lucide-react'
+import { useEffect, useMemo, useRef } from 'react'
 import { remarkHighlights } from '../lib/remarkHighlights'
 import { remarkWikiLinks } from '../lib/remarkWikiLinks'
+import { createRehypeDocumentSearch } from '../lib/rehypeDocumentSearch'
 import { replaceMarkdownRange } from '../lib/imageMarkdown'
 import { PreviewImage } from './PreviewImage'
 
 interface MarkdownPreviewProps {
   body: string
   noteId: string
+  searchQuery?: string
+  currentSearchMatch?: number
   onOpenWikiLink: (title: string) => void
   onChangeBody: (body: string) => void
 }
@@ -17,15 +21,30 @@ interface MarkdownPreviewProps {
 export function MarkdownPreview({
   body,
   noteId,
+  searchQuery = '',
+  currentSearchMatch = -1,
   onOpenWikiLink,
   onChangeBody,
 }: MarkdownPreviewProps) {
+  const previewRef = useRef<HTMLElement>(null)
+  const documentSearchPlugin = useMemo(
+    () => createRehypeDocumentSearch(searchQuery, currentSearchMatch),
+    [currentSearchMatch, searchQuery],
+  )
+
+  useEffect(() => {
+    if (currentSearchMatch < 0) return
+    previewRef.current
+      ?.querySelector<HTMLElement>('.document-find-match-current')
+      ?.scrollIntoView({ block: 'center', inline: 'nearest' })
+  }, [currentSearchMatch, searchQuery])
+
   return (
-    <article className="markdown-preview">
+    <article className="markdown-preview" ref={previewRef}>
       {body ? (
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkWikiLinks, remarkHighlights]}
-          rehypePlugins={[rehypeHighlight]}
+          rehypePlugins={[rehypeHighlight, documentSearchPlugin]}
           components={{
             a: ({ href, children, ...props }) => {
               if (href?.startsWith('#folio-note=')) {

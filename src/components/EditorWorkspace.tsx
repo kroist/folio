@@ -6,8 +6,10 @@ import { EditorView, keymap, type ViewUpdate } from '@codemirror/view'
 import { classHighlighter } from '@lezer/highlight'
 import CodeMirror from '@uiw/react-codemirror'
 import { Bold, Code2, Highlighter, Italic, Link, Link2 } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { EditorMode, Note, Notebook } from '../types'
+import { documentFindExtension, updateDocumentFind } from '../lib/codeMirrorDocumentSearch'
+import { cycleMatchIndex, findTextMatches } from '../lib/documentSearch'
 import {
   formatSelectionEdit,
   slashCommandEdit,
@@ -19,7 +21,10 @@ import { wordCount } from '../lib/notes'
 import { attachmentImageMarkdown } from '../lib/imageMarkdown'
 import { wikiCompletionEdit, type WikiLinkCandidate } from '../lib/wikiLinks'
 import { PenLine, Pin, Trash2 } from './Icon'
+import { DocumentFindBar } from './DocumentFindBar'
 import { MarkdownPreview } from './MarkdownPreview'
+
+const DOCUMENT_FIND_STORAGE_KEY = 'folio.document-find-query'
 
 interface EditorWorkspaceProps {
   note?: Note
@@ -123,12 +128,28 @@ export function EditorWorkspace({
   const [tagDraft, setTagDraft] = useState('')
   const [selectionToolbar, setSelectionToolbar] = useState<SelectionToolbarState | null>(null)
   const [attachmentError, setAttachmentError] = useState<string>()
+  const [documentFindOpen, setDocumentFindOpen] = useState(false)
+  const [documentFindQuery, setDocumentFindQuery] = useState(
+    () => window.localStorage.getItem(DOCUMENT_FIND_STORAGE_KEY) ?? '',
+  )
+  const [currentFindMatch, setCurrentFindMatch] = useState(-1)
   const editorView = useRef<EditorView | null>(null)
+  const documentFindInput = useRef<HTMLInputElement>(null)
   const notebookTree = useMemo(() => flattenNotebooks(notebooks), [notebooks])
+  const documentFindMatches = useMemo(
+    () => findTextMatches(note?.body ?? '', documentFindQuery),
+    [documentFindQuery, note?.body],
+  )
+  const activeFindMatch = documentFindMatches.length === 0
+    ? -1
+    : currentFindMatch < 0
+      ? 0
+      : Math.min(currentFindMatch, documentFindMatches.length - 1)
   const editorExtensions = useMemo(
     () => [
       markdown(),
       syntaxHighlighting(classHighlighter),
+      documentFindExtension,
       autocompletion({
         override: [wikiLinkCompletion(wikiLinkCandidates), slashCompletion],
         maxRenderedOptions: 12,
@@ -155,6 +176,78 @@ export function EditorWorkspace({
     ],
     [lineWrapping, wikiLinkCandidates],
   )
+
+  const focusDocumentFind = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      documentFindInput.current?.focus()
+      documentFindInput.current?.select()
+    })
+  }, [])
+
+  const openDocumentFind = useCallback(() => {
+    setSelectionToolbar(null)
+    setDocumentFindOpen(true)
+    focusDocumentFind()
+  }, [focusDocumentFind])
+
+  const closeDocumentFind = useCallback(() => {
+    setDocumentFindOpen(false)
+    window.requestAnimationFrame(() => {
+      if (mode !== 'preview') editorView.current?.focus()
+    })
+  }, [mode])
+
+  const navigateDocumentFind = useCallback((direction: 1 | -1) => {
+    setSelectionToolbar(null)
+    setDocumentFindOpen(true)
+    setCurrentFindMatch(cycleMatchIndex(activeFindMatch, documentFindMatches.length, direction))
+  }, [activeFindMatch, documentFindMatches.length])
+
+  const changeDocumentFindQuery = useCallback((value: string) => {
+    setDocumentFindQuery(value)
+    setCurrentFindMatch(value ? 0 : -1)
+  }, [])
+
+  useEffect(() => {
+    window.localStorage.setItem(DOCUMENT_FIND_STORAGE_KEY, documentFindQuery)
+  }, [documentFindQuery])
+
+  useEffect(() => {
+    const view = editorView.current
+    if (!view) return
+    updateDocumentFind(
+      view,
+      documentFindOpen ? documentFindQuery : '',
+      documentFindOpen ? activeFindMatch : -1,
+      documentFindOpen && activeFindMatch >= 0,
+    )
+  }, [activeFindMatch, documentFindOpen, documentFindQuery, note?.body])
+
+  useEffect(() => {
+    const handleDocumentFindShortcut = (event: KeyboardEvent) => {
+      const modifier = event.metaKey || event.ctrlKey
+      const key = event.key.toLowerCase()
+      if (modifier && !event.altKey && !event.shiftKey && key === 'f') {
+        event.preventDefault()
+        event.stopPropagation()
+        openDocumentFind()
+        return
+      }
+      if (modifier && !event.altKey && key === 'g') {
+        event.preventDefault()
+        event.stopPropagation()
+        navigateDocumentFind(event.shiftKey ? -1 : 1)
+        return
+      }
+      if (documentFindOpen && event.key === 'Escape') {
+        event.preventDefault()
+        event.stopPropagation()
+        closeDocumentFind()
+      }
+    }
+    window.addEventListener('keydown', handleDocumentFindShortcut, true)
+    return () => window.removeEventListener('keydown', handleDocumentFindShortcut, true)
+  }, [closeDocumentFind, documentFindOpen, navigateDocumentFind, openDocumentFind])
 
   const updateSelectionToolbar = (update: ViewUpdate) => {
     const selection = update.state.selection.main
@@ -213,6 +306,19 @@ export function EditorWorkspace({
       setAttachmentError(error instanceof Error ? error.message : 'Could not attach image')
     }
   }
+
+  const documentFindBar = documentFindOpen ? (
+    <DocumentFindBar
+      inputRef={documentFindInput}
+      value={documentFindQuery}
+      current={activeFindMatch}
+      count={documentFindMatches.length}
+      onChange={changeDocumentFindQuery}
+      onPrevious={() => navigateDocumentFind(-1)}
+      onNext={() => navigateDocumentFind(1)}
+      onClose={closeDocumentFind}
+    />
+  ) : null
 
   if (!note) {
     return (
@@ -378,7 +484,11 @@ export function EditorWorkspace({
               }
 
               const target = event.target as HTMLElement
-              if (target.closest('.cm-line') || target.closest('.cm-tooltip')) return
+              if (
+                target.closest('.cm-line') ||
+                target.closest('.cm-tooltip') ||
+                target.closest('.document-find-bar')
+              ) return
 
               event.preventDefault()
               const documentEnd = view.state.doc.length
@@ -389,6 +499,7 @@ export function EditorWorkspace({
               view.focus()
             }}
           >
+            {documentFindBar}
             <CodeMirror
               className="folio-editor"
               value={note.body}
@@ -396,6 +507,11 @@ export function EditorWorkspace({
               extensions={editorExtensions}
               onCreateEditor={(view) => {
                 editorView.current = view
+                updateDocumentFind(
+                  view,
+                  documentFindOpen ? documentFindQuery : '',
+                  documentFindOpen ? activeFindMatch : -1,
+                )
               }}
               onUpdate={updateSelectionToolbar}
               onChange={(body) => patchNote({ body })}
@@ -414,13 +530,18 @@ export function EditorWorkspace({
           </div>
         )}
         {mode !== 'edit' && (
-          <div className="preview-surface">
-            <MarkdownPreview
-              body={note.body}
-              noteId={note.id}
-              onOpenWikiLink={onOpenWikiLink}
-              onChangeBody={(body) => patchNote({ body })}
-            />
+          <div className="preview-pane">
+            {mode === 'preview' && documentFindBar}
+            <div className="preview-surface">
+              <MarkdownPreview
+                body={note.body}
+                noteId={note.id}
+                searchQuery={documentFindOpen ? documentFindQuery : ''}
+                currentSearchMatch={documentFindOpen ? activeFindMatch : -1}
+                onOpenWikiLink={onOpenWikiLink}
+                onChangeBody={(body) => patchNote({ body })}
+              />
+            </div>
           </div>
         )}
       </div>

@@ -2,6 +2,13 @@
 
 All notable changes to Folio are documented here.
 
+## [1.0.2] - 2026-08-23
+
+### Added
+
+- Added Chrome-style in-note search across the editor and rendered Markdown preview
+- Added shared match highlighting in split view with forward and backward keyboard navigation
+
 ## [1.0.1] - 2026-08-18
 
 ### Fixed
@@ -27,5 +34,6 @@ Folio's first public release.
 - Bundled MCP server with guarded read/write tools for AI agents
 - Apple Silicon macOS packaging as a DMG and ZIP
 
+[1.0.2]: https://github.com/kroist/folio/releases/tag/v1.0.2
 [1.0.1]: https://github.com/kroist/folio/releases/tag/v1.0.1
 [1.0.0]: https://github.com/kroist/folio/releases/tag/v1.0.0
