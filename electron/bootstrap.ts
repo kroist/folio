@@ -2,6 +2,7 @@ import { cp, lstat, mkdir, readFile, readlink, rename, rm, symlink } from 'node:
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { app, dialog } from 'electron'
+import { isNewerVersion } from './version'
 
 const requirePayload = createRequire(__filename)
 const versionPattern = /^\d+\.\d+\.\d+$/
@@ -88,7 +89,8 @@ if (!app.isPackaged) {
     }
   }
 
-  if (!await currentVersion()) await activate(seedVersion)
+  const activeVersion = await currentVersion()
+  if (!activeVersion || isNewerVersion(seedVersion, activeVersion)) await activate(seedVersion)
   const load = async (): Promise<void> => {
     const version = await currentVersion()
     if (!version) throw new Error('Folio has no active application payload.')

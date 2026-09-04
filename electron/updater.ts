@@ -5,13 +5,13 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import type { BrowserWindow, Dialog } from 'electron'
 import updateKey from './update-key.json'
+import { isNewerVersion } from './version'
 
 const RELEASE_API = 'https://api.github.com/repos/kroist/folio/releases/latest'
 const STARTUP_CHECK_DELAY_MS = 15_000
 const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1_000
 const MAX_UPDATE_SIZE = 100 * 1024 * 1024
 const execFileAsync = promisify(execFile)
-const versionPattern = /^v?(\d+)\.(\d+)\.(\d+)$/
 
 interface GitHubAsset {
   name?: unknown
@@ -67,20 +67,7 @@ export interface FolioUpdater {
   stop: () => void
 }
 
-const versionParts = (version: string): number[] | undefined => {
-  const match = versionPattern.exec(version)
-  return match?.slice(1).map(Number)
-}
-
-export const isNewerVersion = (candidate: string, current: string): boolean => {
-  const left = versionParts(candidate)
-  const right = versionParts(current)
-  if (!left || !right) return false
-  for (let index = 0; index < left.length; index += 1) {
-    if (left[index] !== right[index]) return left[index] > right[index]
-  }
-  return false
-}
+export { isNewerVersion }
 
 const readAsset = (asset: GitHubAsset): UpdateAsset | undefined => {
   if (
