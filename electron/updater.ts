@@ -370,7 +370,7 @@ const createUpdateWindow = async (
 ) => {
   const { app, BrowserWindow: ElectronBrowserWindow } = await import('electron')
   const parent = getWindow()
-  const icon = await app.getFileIcon(path.resolve(process.execPath, '../../..'), { size: 'large' })
+  const icon = await app.getFileIcon(path.resolve(process.execPath, '../../..'), { size: 'normal' })
   const window = new ElectronBrowserWindow({
     width: 790,
     height: 610,
