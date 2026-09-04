@@ -2,6 +2,12 @@
 
 All notable changes to Folio are documented here.
 
+## [1.1.0] - 2026-09-04
+
+### Added
+
+- Added a dedicated macOS update window with release notes, skip and reminder actions, automatic-update preferences, and in-place download and restart states
+
 ## [1.0.3] - 2026-09-04
 
 ### Fixed
@@ -41,6 +47,7 @@ Folio's first public release.
 - Bundled MCP server with guarded read/write tools for AI agents
 - Apple Silicon macOS packaging as a DMG and ZIP
 
+[1.1.0]: https://github.com/kroist/folio/releases/tag/v1.1.0
 [1.0.3]: https://github.com/kroist/folio/releases/tag/v1.0.3
 [1.0.2]: https://github.com/kroist/folio/releases/tag/v1.0.2
 [1.0.1]: https://github.com/kroist/folio/releases/tag/v1.0.1

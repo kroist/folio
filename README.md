@@ -4,14 +4,14 @@ A calm, local-first Markdown workspace for macOS. Notes are ordinary Markdown fi
 
 ## Download
 
-Download **Folio 1.0.3 for Apple Silicon** from the [GitHub release](https://github.com/kroist/folio/releases/tag/v1.0.3). Open the DMG and drag Folio into Applications.
+Download **Folio 1.1.0 for Apple Silicon** from the [GitHub release](https://github.com/kroist/folio/releases/tag/v1.1.0). Open the DMG and drag Folio into Applications.
 
-The 1.0.3 build is ad-hoc signed but not Apple-notarized. On first launch, macOS may require you to control-click Folio, choose **Open**, and confirm. Intel Macs are not supported by this build.
+The 1.1.0 build is ad-hoc signed but not Apple-notarized. On first launch, macOS may require you to control-click Folio, choose **Open**, and confirm. Intel Macs are not supported by this build.
 
 ## Features
 
 - A native-feeling three-pane Electron shell
-- Ed25519-verified background updates with a native restart prompt
+- Ed25519-verified updates with release notes and restart controls
 - Local note storage as atomic, portable Markdown files
 - CodeMirror 6 Markdown editing
 - Edit, split, and preview modes
@@ -96,7 +96,7 @@ npm run smoke:package:mac
 
 The complete versioning, verification, tagging, and GitHub publishing checklist is in [RELEASING.md](./RELEASING.md).
 
-Packaged macOS builds check GitHub Releases shortly after launch and every six hours. **Folio → Check for Updates…** runs the same check manually. Folio verifies each application payload with its own Ed25519 key before activating it on restart. Version 1.0.3 is the one-time manual bootstrap install; later app-code releases update without an Apple Developer ID. Electron or bundled-runtime upgrades still require a new manual app install.
+Packaged macOS builds check GitHub Releases shortly after launch and every six hours. **Folio → Check for Updates…** runs the same check manually. Available updates appear in a dedicated window with release notes, skip and reminder actions, and an automatic-download preference. Folio verifies each application payload with its own Ed25519 key before activating it on restart. Version 1.0.3 is the one-time manual bootstrap install; later app-code releases update without an Apple Developer ID. Electron or bundled-runtime upgrades still require a new manual app install.
 
 ## Editor shortcuts
 

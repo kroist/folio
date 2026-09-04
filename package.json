@@ -1,6 +1,6 @@
 {
   "name": "folio-markdown-editor",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "type": "module",
   "description": "A calm, local-first Markdown workspace for macOS.",
   "license": "MIT",
@@ -18,7 +18,10 @@
   },
   "overrides": {
     "@modelcontextprotocol/sdk": "1.30.0",
-    "@hono/node-server": "2.1.0"
+    "@hono/node-server": "2.1.0",
+    "@xmldom/xmldom": "0.8.15",
+    "fast-uri": "3.1.7",
+    "qs": "6.16.0"
   },
   "productName": "Folio",
   "main": "dist-electron/bootstrap.cjs",

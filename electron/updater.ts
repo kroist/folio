@@ -21,6 +21,7 @@ interface GitHubAsset {
 
 interface GitHubRelease {
   tag_name?: unknown
+  body?: unknown
   assets?: unknown
 }
 
@@ -32,8 +33,21 @@ interface UpdateAsset {
 
 interface AvailableUpdate {
   version: string
+  releaseNotes: string
   archive: UpdateAsset
   signature: UpdateAsset
+}
+
+interface UpdatePreferences {
+  automaticallyDownload?: boolean
+  skippedVersion?: string
+}
+
+type UpdateAction = 'skip' | 'later' | 'install' | 'restart'
+
+interface UpdateWindowAction {
+  action: UpdateAction
+  automaticallyDownload: boolean
 }
 
 interface FolioUpdaterOptions {
@@ -89,7 +103,54 @@ export const selectAvailableUpdate = (
   const archive = assets.find((asset) => asset.name === `Folio-${version}-update.zip`)
   const signature = assets.find((asset) => asset.name === `Folio-${version}-update.zip.sig`)
   if (!archive || !signature) throw new Error(`Folio ${version} has no signed update payload.`)
-  return { version, archive, signature }
+  const releaseNotes = typeof release.body === 'string' && release.body.trim()
+    ? release.body.trim()
+    : `Folio ${version} includes improvements and fixes.`
+  return { version, releaseNotes, archive, signature }
+}
+
+const escapeHtml = (value: string): string => value.replace(/[&<>"']/g, (character) => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+})[character]!)
+
+const renderInlineReleaseNotes = (value: string): string => escapeHtml(value)
+  .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  .replace(/`(.+?)`/g, '<code>$1</code>')
+
+export const renderReleaseNotes = (markdown: string): string => {
+  const output: string[] = []
+  let list: 'ul' | 'ol' | undefined
+  const closeList = () => {
+    if (list) output.push(`</${list}>`)
+    list = undefined
+  }
+
+  for (const line of markdown.trim().split(/\r?\n/)) {
+    const heading = /^(#{1,3})\s+(.+)$/.exec(line)
+    const bullet = /^\s*[-*]\s+(.+)$/.exec(line)
+    const numbered = /^\s*\d+\.\s+(.+)$/.exec(line)
+    if (heading) {
+      closeList()
+      output.push(`<h3>${renderInlineReleaseNotes(heading[2])}</h3>`)
+    } else if (bullet || numbered) {
+      const nextList = bullet ? 'ul' : 'ol'
+      if (list !== nextList) {
+        closeList()
+        list = nextList
+        output.push(`<${list}>`)
+      }
+      output.push(`<li>${renderInlineReleaseNotes((bullet ?? numbered)![1])}</li>`)
+    } else if (line.trim()) {
+      closeList()
+      output.push(`<p>${renderInlineReleaseNotes(line)}</p>`)
+    }
+  }
+  closeList()
+  return output.join('') || '<p>No release notes were provided.</p>'
 }
 
 export const hasValidUpdateSignature = (
@@ -174,6 +235,207 @@ const stageUpdate = async (updateRoot: string, update: AvailableUpdate): Promise
   await rename(pendingTemporaryPath, pendingPath)
 }
 
+const readPreferences = async (updateRoot: string): Promise<UpdatePreferences> => {
+  try {
+    const preferences = JSON.parse(await readFile(path.join(updateRoot, 'preferences.json'), 'utf8')) as unknown
+    return preferences && typeof preferences === 'object' ? preferences as UpdatePreferences : {}
+  } catch {
+    return {}
+  }
+}
+
+const writePreferences = async (
+  updateRoot: string,
+  preferences: UpdatePreferences,
+): Promise<void> => {
+  await writeFile(
+    path.join(updateRoot, 'preferences.json'),
+    `${JSON.stringify(preferences, null, 2)}\n`,
+    { mode: 0o600 },
+  )
+}
+
+export const updateWindowHtml = (
+  update: AvailableUpdate,
+  currentVersion: string,
+  iconDataUrl: string,
+  automaticallyDownload: boolean,
+  initialState: 'available' | 'ready',
+): string => `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Folio Update</title>
+  <style>
+    :root { color-scheme: light dark; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f6f6f6; color: #202020; font-size: 14px; -webkit-user-select: none; }
+    main { height: 100vh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 18px; padding: 72px 32px 24px; }
+    header { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 20px; }
+    .icon { width: 76px; height: 76px; border-radius: 18px; object-fit: contain; }
+    .fallback-icon { display: none; place-items: center; background: #f2e9d6; color: #5c4b2d; font: 700 34px Georgia, serif; box-shadow: inset 0 0 0 1px #d9cdb7; }
+    h1 { margin: 0 0 8px; font-size: 21px; line-height: 1.25; letter-spacing: -0.01em; }
+    .summary { margin: 0; color: #333; font-size: 15px; line-height: 1.4; }
+    .notes { min-height: 180px; overflow: auto; padding: 18px 22px; border: 1px solid #d4d4d4; border-radius: 10px; background: #fff; -webkit-user-select: text; }
+    .notes h3 { margin: 0 0 12px; font-size: 20px; }
+    .notes h3:not(:first-child) { margin-top: 18px; }
+    .notes p { margin: 8px 0; line-height: 1.45; }
+    .notes ul, .notes ol { margin: 8px 0; padding-left: 24px; }
+    .notes li { margin: 5px 0; line-height: 1.4; }
+    .notes code { padding: 1px 4px; border-radius: 4px; background: #ededed; font-family: ui-monospace, monospace; font-size: 12px; }
+    footer { display: grid; gap: 14px; }
+    .automatic { display: flex; align-items: center; gap: 8px; width: fit-content; }
+    .automatic input { width: 16px; height: 16px; margin: 0; accent-color: #3478f6; }
+    .actions { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; }
+    button { min-width: 138px; height: 36px; padding: 0 20px; border: 0; border-radius: 18px; background: #e4e4e4; color: #202020; font: inherit; }
+    button:hover { background: #d9d9d9; }
+    button:active { background: #cecece; }
+    button.primary { background: #3478f6; color: white; }
+    button.primary:hover { background: #286ee7; }
+    button:focus-visible { outline: 3px solid color-mix(in srgb, #3478f6 45%, transparent); outline-offset: 2px; }
+    .status { display: none; align-items: center; gap: 10px; color: #555; }
+    progress { width: 180px; accent-color: #3478f6; }
+    body.downloading .status { display: flex; }
+    body.downloading .automatic, body.downloading .actions { visibility: hidden; }
+    .skip { justify-self: start; }
+    body.ready .automatic, body.ready .skip { display: none; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #292929; color: #f2f2f2; }
+      .summary, .status { color: #d0d0d0; }
+      .notes { border-color: #505050; background: #343434; }
+      .notes code { background: #484848; }
+      button { background: #505050; color: #f2f2f2; }
+      button:hover { background: #5c5c5c; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      ${iconDataUrl ? `<img class="icon" src="${iconDataUrl}" alt="">` : '<div class="icon fallback-icon" style="display:grid">F</div>'}
+      <div>
+        <h1 id="title">A new version of Folio is available!</h1>
+        <p class="summary" id="summary">Folio ${escapeHtml(update.version)} is now available—you have ${escapeHtml(currentVersion)}.</p>
+      </div>
+    </header>
+    <section class="notes">${renderReleaseNotes(update.releaseNotes)}</section>
+    <footer>
+      <label class="automatic"><input id="automatic" type="checkbox" ${automaticallyDownload ? 'checked' : ''}> Automatically download and install updates in the future</label>
+      <div class="status"><progress></progress><span>Downloading and verifying the update…</span></div>
+      <div class="actions">
+        <button class="skip" data-action="skip">Skip This Version</button>
+        <button data-action="later">Remind Me Later</button>
+        <button class="primary" data-action="install" autofocus>Install Update</button>
+      </div>
+    </footer>
+  </main>
+  <script>
+    const automatic = document.getElementById('automatic')
+    const primary = document.querySelector('.primary')
+    const later = document.querySelector('[data-action="later"]')
+    for (const button of document.querySelectorAll('button')) button.addEventListener('click', () => {
+      if (button.dataset.action === 'install') window.setUpdateState('downloading')
+      location.href = 'folio-update-action://' + button.dataset.action + '?automatic=' + (automatic.checked ? '1' : '0')
+    })
+    addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !document.body.classList.contains('downloading')) later.click()
+    })
+    window.setUpdateState = (state) => {
+      document.body.className = state
+      if (state === 'downloading') {
+        document.getElementById('title').textContent = 'Downloading Folio ${escapeHtml(update.version)}…'
+        document.getElementById('summary').textContent = 'Folio will verify the update before installing it.'
+      } else if (state === 'ready') {
+        document.getElementById('title').textContent = 'Folio ${escapeHtml(update.version)} is ready to install'
+        document.getElementById('summary').textContent = 'Restart Folio to finish the update. Your notes and settings will be preserved.'
+        later.textContent = 'Later'
+        primary.textContent = 'Restart and Update'
+        primary.dataset.action = 'restart'
+        primary.focus()
+      }
+    }
+    ${initialState === 'ready' ? "window.setUpdateState('ready')" : ''}
+  </script>
+</body>
+</html>`
+
+const createUpdateWindow = async (
+  update: AvailableUpdate,
+  currentVersion: string,
+  automaticallyDownload: boolean,
+  getWindow: () => BrowserWindow | null,
+  initialState: 'available' | 'ready' = 'available',
+) => {
+  const { app, BrowserWindow: ElectronBrowserWindow } = await import('electron')
+  const parent = getWindow()
+  const icon = await app.getFileIcon(path.resolve(process.execPath, '../../..'), { size: 'large' })
+  const window = new ElectronBrowserWindow({
+    width: 790,
+    height: 610,
+    minWidth: 680,
+    minHeight: 500,
+    show: false,
+    title: 'Folio Update',
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 17, y: 16 },
+    backgroundColor: '#f6f6f6',
+    ...(parent && !parent.isDestroyed() ? { parent } : {}),
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  })
+  window.setMenuBarVisibility(false)
+
+  const queuedActions: UpdateWindowAction[] = []
+  let waiting: ((action: UpdateWindowAction) => void) | undefined
+  const emit = (action: UpdateWindowAction) => {
+    if (waiting) {
+      const resolve = waiting
+      waiting = undefined
+      resolve(action)
+    } else {
+      queuedActions.push(action)
+    }
+  }
+  const later = () => emit({ action: 'later', automaticallyDownload })
+
+  window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  window.webContents.on('will-navigate', (event, rawUrl) => {
+    const url = new URL(rawUrl)
+    if (url.protocol !== 'folio-update-action:') return
+    event.preventDefault()
+    const action = url.hostname as UpdateAction
+    if (!['skip', 'later', 'install', 'restart'].includes(action)) return
+    emit({ action, automaticallyDownload: url.searchParams.get('automatic') === '1' })
+  })
+  window.once('closed', later)
+  window.once('ready-to-show', () => window.show())
+  await window.loadURL(`data:text/html;charset=UTF-8,${encodeURIComponent(updateWindowHtml(
+    update,
+    currentVersion,
+    icon.isEmpty() ? '' : icon.resize({ width: 96, height: 96 }).toDataURL(),
+    automaticallyDownload,
+    initialState,
+  ))}`)
+
+  return {
+    close: () => {
+      if (!window.isDestroyed()) window.close()
+    },
+    nextAction: (): Promise<UpdateWindowAction> => {
+      const queued = queuedActions.shift()
+      return queued ? Promise.resolve(queued) : new Promise((resolve) => { waiting = resolve })
+    },
+    setState: async (state: 'downloading' | 'ready') => {
+      if (!window.isDestroyed()) await window.webContents.executeJavaScript(`window.setUpdateState('${state}')`)
+    },
+  }
+}
+
 export const createFolioUpdater = ({
   dialog,
   getWindow,
@@ -217,6 +479,7 @@ export const createFolioUpdater = ({
     }
 
     checkInProgress = true
+    let updateWindow: Awaited<ReturnType<typeof createUpdateWindow>> | undefined
     try {
       const response = await fetch(RELEASE_API, {
         headers: {
@@ -236,30 +499,47 @@ export const createFolioUpdater = ({
         return
       }
 
-      if (manual) await showMessage({
-        type: 'info',
-        title: 'Folio update available',
-        message: `Folio ${update.version} is available.`,
-        detail: 'It is downloading in the background. Folio will let you know when it is ready.',
-        buttons: ['OK'],
-      })
+      const preferences = await readPreferences(updateRoot)
+      if (!manual && preferences.skippedVersion === update.version) return
+      let automaticallyDownload = preferences.automaticallyDownload === true
+
+      if (!automaticallyDownload || manual) {
+        updateWindow = await createUpdateWindow(update, version, automaticallyDownload, getWindow)
+        const choice = await updateWindow.nextAction()
+        automaticallyDownload = choice.automaticallyDownload
+        if (choice.action === 'skip') {
+          await writePreferences(updateRoot, {
+            automaticallyDownload,
+            skippedVersion: update.version,
+          })
+          updateWindow.close()
+          return
+        }
+        await writePreferences(updateRoot, { automaticallyDownload })
+        if (choice.action !== 'install') {
+          updateWindow.close()
+          return
+        }
+        await updateWindow.setState('downloading')
+      }
+
       await stageUpdate(updateRoot, update)
-      const { response: choice } = await showMessage({
-        type: 'info',
-        title: 'Folio update ready',
-        message: `Folio ${update.version} is ready to install.`,
-        detail: 'Restart Folio to finish the update. Your notes and settings will be preserved.',
-        buttons: ['Later', 'Restart and Update'],
-        defaultId: 1,
-        cancelId: 0,
-        noLink: true,
-      })
-      if (choice !== 1) return
+      if (updateWindow) {
+        await updateWindow.setState('ready')
+      } else {
+        updateWindow = await createUpdateWindow(update, version, automaticallyDownload, getWindow, 'ready')
+      }
+      const choice = await updateWindow.nextAction()
+      if (choice.action !== 'restart') {
+        updateWindow.close()
+        return
+      }
       await prepareToRestart()
       restart()
     } catch (error) {
       console.warn('Folio update check failed.', error)
-      if (manual) await showMessage({
+      updateWindow?.close()
+      if (manual || updateWindow) await showMessage({
         type: 'error',
         title: 'Could not check for updates',
         message: 'Folio could not check for or download an update.',
