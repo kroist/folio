@@ -4,6 +4,7 @@ dist-electron/
 release/
 build/dev/
 build/runtime/
+build/update/
 .DS_Store
 *.log
 .codex/

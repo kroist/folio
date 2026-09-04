@@ -1,6 +1,6 @@
 {
   "name": "folio-markdown-editor",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "description": "A calm, local-first Markdown workspace for macOS.",
   "license": "MIT",
@@ -21,7 +21,7 @@
     "@hono/node-server": "2.1.0"
   },
   "productName": "Folio",
-  "main": "dist-electron/main.cjs",
+  "main": "dist-electron/bootstrap.cjs",
   "build": {
     "appId": "com.folio.markdown-editor",
     "productName": "Folio",
@@ -33,14 +33,17 @@
     "asar": false,
     "afterPack": "scripts/after-pack.cjs",
     "files": [
-      "dist/**/*",
-      "dist-electron/**/*",
+      "dist-electron/bootstrap.cjs",
       "package.json"
     ],
     "extraResources": [
       {
         "from": "build/runtime/node",
         "to": "runtime/node"
+      },
+      {
+        "from": "build/update/payload",
+        "to": "update-seed"
       }
     ],
     "mac": {
@@ -70,11 +73,13 @@
   "scripts": {
     "dev": "concurrently -k \"vite\" \"npm:dev:electron\"",
     "dev:electron": "wait-on tcp:5173 && npm run build:electron && node scripts/run-dev-electron.mjs",
-    "build:electron": "esbuild electron/main.ts electron/preload.ts electron/qmd-worker.ts electron/mcp-server.ts --bundle --platform=node --format=cjs --external:electron --external:@tobilu/qmd --outdir=dist-electron --out-extension:.js=.cjs",
+    "build:electron": "esbuild electron/bootstrap.ts electron/main.ts electron/preload.ts electron/qmd-worker.ts electron/mcp-server.ts --bundle --platform=node --format=cjs --external:electron --external:@tobilu/qmd --outdir=dist-electron --out-extension:.js=.cjs",
     "build": "npm run typecheck && vite build && npm run build:electron",
     "prepare:runtime": "node scripts/prepare-node-runtime.mjs",
-    "package:mac": "npm run build && npm run prepare:runtime && electron-builder --mac --publish never",
-    "package:mac:dir": "npm run build && npm run prepare:runtime && electron-builder --mac dir --publish never",
+    "prepare:update": "node scripts/prepare-update.mjs",
+    "sign:update": "node scripts/sign-update.mjs",
+    "package:mac": "npm run build && npm run prepare:update && npm run prepare:runtime && electron-builder --mac --publish never",
+    "package:mac:dir": "npm run build && npm run prepare:update && npm run prepare:runtime && electron-builder --mac dir --publish never",
     "smoke:package:mac": "node scripts/smoke-packaged-search.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest",

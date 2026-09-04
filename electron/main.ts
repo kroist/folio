@@ -1,7 +1,7 @@
 import { watch, type FSWatcher } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
-import { app, autoUpdater, BrowserWindow, clipboard, dialog, ipcMain, Menu, shell } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, shell } from 'electron'
 import type { IpcMainInvokeEvent, MenuItemConstructorOptions } from 'electron'
 import { QmdSearchService } from './search'
 import { buildMcpSetupInfo } from './mcp-config'
@@ -270,14 +270,20 @@ app.whenReady().then(async () => {
   search = createSearchService()
   startVaultWatcher()
   updater = createFolioUpdater({
-    autoUpdater,
     dialog,
     getWindow: () => mainWindow,
     prepareToRestart: prepareMainEditor,
+    restart: () => {
+      app.relaunch()
+      app.exit(0)
+    },
     isPackaged: app.isPackaged,
     platform: process.platform,
-    arch: process.arch,
-    version: app.getVersion(),
+    version: process.env.FOLIO_PAYLOAD_VERSION ?? app.getVersion(),
+    updateRoot: process.env.FOLIO_UPDATE_ROOT,
+  })
+  app.setAboutPanelOptions({
+    applicationVersion: process.env.FOLIO_PAYLOAD_VERSION ?? app.getVersion(),
   })
   installApplicationMenu()
 
@@ -294,12 +300,15 @@ app.whenReady().then(async () => {
     if (!['appearance', 'vault', 'agents'].includes(section)) throw new Error('Invalid settings section')
     return openSettingsWindow(section)
   })
+  const payloadElectronPath = process.env.FOLIO_PAYLOAD_CURRENT
+    ? path.join(process.env.FOLIO_PAYLOAD_CURRENT, 'dist-electron')
+    : __dirname
   const mcpSetupInfo = () => buildMcpSetupInfo({
     executablePath: process.execPath,
-    serverPath: path.join(__dirname, 'mcp-server.cjs'),
+    serverPath: path.join(payloadElectronPath, 'mcp-server.cjs'),
     vaultPath: library.getVaultPath(),
     userDataPath,
-    qmdWorkerPath: path.join(__dirname, 'qmd-worker.cjs'),
+    qmdWorkerPath: path.join(payloadElectronPath, 'qmd-worker.cjs'),
     searchIndexPath: vaultLocations.mcpSearchIndexPath,
     nodeRuntimePath: app.isPackaged
       ? path.join(process.resourcesPath, 'runtime', 'node')

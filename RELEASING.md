@@ -8,11 +8,11 @@ This document describes the manual release process for Folio. Run it from the re
 - Builds are ad-hoc signed by `scripts/after-pack.cjs`, but they are not currently signed with an Apple Developer ID or notarized.
 - `asar` is intentionally disabled because the bundled Node sidecar must load qmd and its native dependencies from real files.
 - Release artifacts are generated in `release/` and are ignored by Git.
-- Folio contains an automatic updater, but Squirrel.Mac requires every installed and downloaded build to use a valid, consistent Apple Developer ID signature. Ad-hoc-signed builds must not be advertised as automatically updatable.
+- Folio 1.0.3 and later update application payloads independently of the ad-hoc-signed app bundle. Every published payload must be signed with Folio's Ed25519 update key.
 
 Until Developer ID signing and notarization are configured, every GitHub release must clearly disclose that macOS may require users to control-click Folio, choose **Open**, and confirm.
 
-The first updater-enabled, Developer-ID-signed release is a bootstrap release: users on 1.0.0 must install it manually. Automatic updates can only carry users from that signed release to later releases signed by the same identity.
+Version 1.0.3 is the one-time bootstrap release and must be installed manually. App-code updates can then install automatically. Electron, bundled Node, or external native-dependency changes still require a manually installed app release.
 
 ## Prerequisites
 
@@ -21,7 +21,7 @@ The first updater-enabled, Developer-ID-signed release is a bootstrap release: u
 - Xcode command-line tools, including `codesign` and `hdiutil`
 - GitHub CLI (`gh`) authenticated with access to `kroist/folio`
 - A clean `main` branch synchronized with `origin/main`
-- For an automatic-update-capable public release, a Developer ID Application certificate available to electron-builder and Apple notarization credentials
+- Folio's Ed25519 private update key in the macOS Keychain item `com.folio.markdown-editor.update-signing`
 
 Confirm the starting state:
 
@@ -33,12 +33,12 @@ gh auth status
 
 ## 1. Choose and record the version
 
-Use semantic versioning. The examples below use `1.0.1`; replace it with the intended version.
+Use semantic versioning. The examples below use `1.0.4`; replace it with the intended version.
 
 Update both `package.json` and `package-lock.json` without creating a tag yet:
 
 ```bash
-npm version 1.0.1 --no-git-tag-version
+npm version 1.0.4 --no-git-tag-version
 ```
 
 Add the release date and user-facing changes to `CHANGELOG.md`. Check that the README, supported architecture, and release limitations are still accurate.
@@ -76,17 +76,20 @@ All checks must pass before packaging. Investigate warnings that could affect th
 
 ```bash
 npm run package:mac
+npm run sign:update
 ```
 
-For version `1.0.1` on Apple Silicon, this creates:
+For version `1.0.4` on Apple Silicon, this creates:
 
 - `release/mac-arm64/Folio.app`
-- `release/Folio-1.0.1-mac-arm64.dmg`
-- `release/Folio-1.0.1-mac-arm64.zip`
+- `release/Folio-1.0.4-mac-arm64.dmg`
+- `release/Folio-1.0.4-mac-arm64.zip`
+- `build/update/Folio-1.0.4-update.zip`
+- `build/update/Folio-1.0.4-update.zip.sig`
 
-The command builds the renderer and Electron processes, bundles the host Node runtime, packages the app, applies the ad-hoc signature, and creates the DMG and ZIP.
+The package command builds the renderer and Electron processes, creates the update payload, bundles the host Node runtime, applies the ad-hoc signature, and creates the DMG and ZIP. `sign:update` reads the private key from Keychain, confirms it matches `electron/update-key.json`, and signs the payload.
 
-The ZIP is mandatory: the update service serves it to Squirrel.Mac. Keep the DMG and ZIP from the same build together. A production updater release must replace the ad-hoc signature with a consistent Developer ID signature and be notarized before publication.
+The update ZIP and its signature are mandatory for automatic updates. The DMG and full-app ZIP remain the manual installation path, including for releases that change Electron, bundled Node, or native dependencies.
 
 ## 5. Verify the package
 
@@ -96,12 +99,13 @@ Run every packaged-artifact check:
 npm run smoke:package:mac
 codesign --verify --deep --strict release/mac-arm64/Folio.app
 codesign -dv --verbose=4 release/mac-arm64/Folio.app
-hdiutil verify release/Folio-1.0.1-mac-arm64.dmg
-unzip -tq release/Folio-1.0.1-mac-arm64.zip
-shasum -a 256 release/Folio-1.0.1-mac-arm64.dmg release/Folio-1.0.1-mac-arm64.zip
+hdiutil verify release/Folio-1.0.4-mac-arm64.dmg
+unzip -tq release/Folio-1.0.4-mac-arm64.zip
+unzip -tq build/update/Folio-1.0.4-update.zip
+shasum -a 256 release/Folio-1.0.4-mac-arm64.dmg release/Folio-1.0.4-mac-arm64.zip build/update/Folio-1.0.4-update.zip build/update/Folio-1.0.4-update.zip.sig
 ```
 
-Record both SHA-256 values for the release notes.
+Record all four SHA-256 values for the release notes.
 
 Before publishing, also install from the DMG and perform a short hands-on test:
 
@@ -111,7 +115,7 @@ Before publishing, also install from the DMG and perform a short hands-on test:
 - verify image attachments and wiki links;
 - open Settings and confirm the theme, vault, backup, and MCP configuration;
 - if available, verify an iCloud Drive vault and MCP access from an agent.
-- from the previous signed version, choose **Folio → Check for Updates…** and verify the new version downloads, prompts to restart, preserves an unsaved edit, and relaunches successfully.
+- from the previous payload-updater version, choose **Folio → Check for Updates…** and verify the new version downloads, prompts to restart, preserves an unsaved edit, and relaunches successfully.
 
 Use a disposable test vault. Do not package or upload personal vault data.
 
@@ -123,21 +127,21 @@ Review the final diff, then stage source and documentation explicitly. The gener
 git status -sb
 git diff --check
 git add package.json package-lock.json CHANGELOG.md README.md
-git commit -m "Release Folio 1.0.1"
-git tag -a v1.0.1 -m "Folio 1.0.1"
+git commit -m "Release Folio 1.0.4"
+git tag -a v1.0.4 -m "Folio 1.0.4"
 ```
 
 If the release includes other intentional source changes, add those paths explicitly before committing. Confirm the tag points to the release commit:
 
 ```bash
-git show --no-patch --decorate v1.0.1
+git show --no-patch --decorate v1.0.4
 ```
 
 Push the commit first and the tag second:
 
 ```bash
 git push origin main
-git push origin v1.0.1
+git push origin v1.0.4
 ```
 
 Wait for the `main` CI run to succeed:
@@ -158,27 +162,29 @@ Write release notes to a Markdown file. Include:
 - the DMG and ZIP SHA-256 checksums;
 - the validation performed.
 
-Create a normal, non-draft release from the existing tag and attach both artifacts:
+Create a normal, non-draft release from the existing tag and attach all four artifacts:
 
 ```bash
-gh release create v1.0.1 \
-  release/Folio-1.0.1-mac-arm64.dmg \
-  release/Folio-1.0.1-mac-arm64.zip \
+gh release create v1.0.4 \
+  release/Folio-1.0.4-mac-arm64.dmg \
+  release/Folio-1.0.4-mac-arm64.zip \
+  build/update/Folio-1.0.4-update.zip \
+  build/update/Folio-1.0.4-update.zip.sig \
   --repo kroist/folio \
   --verify-tag \
-  --title "Folio 1.0.1" \
+  --title "Folio 1.0.4" \
   --notes-file /path/to/release-notes.md
 ```
 
 Verify that the release is published, is not marked as a prerelease, and has both assets:
 
 ```bash
-gh release view v1.0.1 --repo kroist/folio
+gh release view v1.0.4 --repo kroist/folio
 ```
 
 Finally, download the published DMG once and confirm that its SHA-256 digest matches the local artifact.
 
-The updater reads normal, published releases from `update.electronjs.org/kroist/folio`. Draft and prerelease builds are not part of the stable update channel. Always attach the ZIP; publishing only the DMG leaves macOS clients with no update payload.
+The updater reads the latest normal, published GitHub release. Draft and prerelease builds are not part of the stable update channel. Always attach both the update ZIP and its `.sig`; without either file, clients refuse the release.
 
 ## If something goes wrong
 
@@ -187,8 +193,8 @@ The updater reads normal, published releases from `update.electronjs.org/kroist/
 - If an uploaded asset is corrupt but the tagged source is correct, document the incident clearly before replacing the asset.
 - If credentials or personal data are discovered, remove or rotate them immediately. Deleting a file in a later commit does not remove it from Git history.
 
-## Enabling signed automatic updates
+## Enabling Apple-trusted distribution
 
-Before relying on automatic updates, configure a Developer ID Application certificate, hardened runtime entitlements, and Apple notarization. Confirm that `codesign -dv` reports the expected Developer ID authority instead of an ad-hoc signature and test an update from one published version to the next. Use the same signing identity for every update.
+To remove Gatekeeper's first-launch warning, configure a Developer ID Application certificate, hardened runtime entitlements, and Apple notarization. Confirm that `codesign -dv` reports the expected Developer ID authority instead of an ad-hoc signature.
 
-Once that is working, remove the ad-hoc-signing warning from this document, the README, and the GitHub release template. Do not ship an updater-enabled release as automatic-update-capable until this end-to-end signed update test passes.
+Once that is working, remove the ad-hoc-signing warning from this document, the README, and the GitHub release template. Folio's Ed25519 payload verification remains in place independently of Apple signing.

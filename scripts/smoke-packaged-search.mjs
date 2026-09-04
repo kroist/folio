@@ -9,7 +9,7 @@ const appPath = path.resolve(
 )
 const resourcesPath = path.join(appPath, 'Contents', 'Resources')
 const nodePath = path.join(resourcesPath, 'runtime', 'node')
-const workerPath = path.join(resourcesPath, 'app', 'dist-electron', 'qmd-worker.cjs')
+const workerPath = path.join(resourcesPath, 'update-seed', 'dist-electron', 'qmd-worker.cjs')
 const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), 'folio-package-smoke-'))
 const vaultPath = path.join(temporaryDirectory, 'vault')
 const dbPath = path.join(temporaryDirectory, 'search', 'qmd-index.sqlite')
@@ -23,6 +23,7 @@ const child = spawn(nodePath, [workerPath], {
     LLAMA_LOG_LEVEL: 'error',
     GGML_LOG_LEVEL: 'error',
     GGML_BACKEND_SILENT: '1',
+    NODE_PATH: path.join(resourcesPath, 'app', 'node_modules'),
   },
   stdio: ['pipe', 'pipe', 'pipe'],
 })

@@ -2,6 +2,13 @@
 
 All notable changes to Folio are documented here.
 
+## [1.0.3] - 2026-09-04
+
+### Fixed
+
+- Replaced the macOS-signature-dependent updater with Folio's own Ed25519-verified payload updater
+- Added atomic activation and load fallback so invalid updates preserve the last working version
+
 ## [1.0.2] - 2026-08-23
 
 ### Added
@@ -34,6 +41,7 @@ Folio's first public release.
 - Bundled MCP server with guarded read/write tools for AI agents
 - Apple Silicon macOS packaging as a DMG and ZIP
 
+[1.0.3]: https://github.com/kroist/folio/releases/tag/v1.0.3
 [1.0.2]: https://github.com/kroist/folio/releases/tag/v1.0.2
 [1.0.1]: https://github.com/kroist/folio/releases/tag/v1.0.1
 [1.0.0]: https://github.com/kroist/folio/releases/tag/v1.0.0
