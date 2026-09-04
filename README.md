@@ -4,9 +4,9 @@ A calm, local-first Markdown workspace for macOS. Notes are ordinary Markdown fi
 
 ## Download
 
-Download **Folio 1.1.0 for Apple Silicon** from the [GitHub release](https://github.com/kroist/folio/releases/tag/v1.1.0). Open the DMG and drag Folio into Applications.
+Download **Folio 1.2.0 for Apple Silicon** from the [GitHub release](https://github.com/kroist/folio/releases/tag/v1.2.0). Open the DMG and drag Folio into Applications.
 
-The 1.1.0 build is ad-hoc signed but not Apple-notarized. On first launch, macOS may require you to control-click Folio, choose **Open**, and confirm. Intel Macs are not supported by this build.
+The 1.2.0 build is ad-hoc signed but not Apple-notarized. On first launch, macOS may require you to control-click Folio, choose **Open**, and confirm. Intel Macs are not supported by this build.
 
 ## Features
 
@@ -15,7 +15,7 @@ The 1.1.0 build is ad-hoc signed but not Apple-notarized. On first launch, macOS
 - Local note storage as atomic, portable Markdown files
 - CodeMirror 6 Markdown editing
 - Edit, split, and preview modes
-- GitHub Flavored Markdown and code highlighting
+- GitHub Flavored Markdown, KaTeX math, and code highlighting
 - Search, notebooks, tags, pinning, autosave, and deletion
 - Drag reordering with independent manual order for All Notes, each notebook scope, and Pinned
 - Collapsible, directory-backed notebooks with drag/drop nesting, icons, and recoverable deletion

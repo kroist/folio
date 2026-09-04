@@ -512,7 +512,7 @@ export const createFolioMcpServer = (service: FolioMcpService): McpServer => {
   const server = new McpServer(
     { name: 'folio', version: '0.1.0' },
     {
-      instructions: 'Folio is the user’s local Markdown vault. Read with list_notes, search_notes, then get_note before changing content. Mutations require the note’s exact expected_updated_at to prevent stale overwrites; prefer replace_note_text or append_to_note over replacing an entire body. Never delete unless the user explicitly asks, and pass the exact title/name confirmation. Markdown files are the source of truth and changes appear in Folio automatically.',
+      instructions: 'Folio is the user’s local Markdown vault. Read with list_notes, search_notes, then get_note before changing content. Mutations require the note’s exact expected_updated_at to prevent stale overwrites; prefer replace_note_text or append_to_note over replacing an entire body. Never delete unless the user explicitly asks, and pass the exact title/name confirmation. Markdown files are the source of truth and changes appear in Folio automatically. Folio renders LaTeX math in previews: use `$...$` inline and `$$...$$` for blocks, and escape literal dollar signs as `\\$`.',
     },
   )
 

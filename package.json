@@ -1,6 +1,6 @@
 {
   "name": "folio-markdown-editor",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "description": "A calm, local-first Markdown workspace for macOS.",
   "license": "MIT",
@@ -105,7 +105,9 @@
     "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",
     "rehype-highlight": "^7.0.2",
+    "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

@@ -114,11 +114,15 @@ describe('Folio MCP service', () => {
       throw new Error(`No MCP response for ${method}`)
     }
 
-    await request(1, 'initialize', {
+    const initializeResponse = await request(1, 'initialize', {
       protocolVersion: '2025-06-18',
       capabilities: {},
       clientInfo: { name: 'folio-test', version: '1.0.0' },
     })
+    expect(initializeResponse).toHaveProperty(
+      'result.instructions',
+      expect.stringContaining('escape literal dollar signs as `\\$`'),
+    )
     await clientTransport.send({ jsonrpc: '2.0', method: 'notifications/initialized' })
     const toolsResponse = await request(2, 'tools/list', {})
     expect(toolsResponse).toHaveProperty('result.tools')

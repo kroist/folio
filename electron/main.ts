@@ -1,11 +1,11 @@
 import { watch, type FSWatcher } from 'node:fs'
-import { mkdir } from 'node:fs/promises'
+import { copyFile, mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, shell } from 'electron'
 import type { IpcMainInvokeEvent, MenuItemConstructorOptions } from 'electron'
 import { QmdSearchService } from './search'
 import { buildMcpSetupInfo } from './mcp-config'
-import { LibraryStore } from './store'
+import { LibraryStore, safeFileName } from './store'
 import { createFolioUpdater, type FolioUpdater } from './updater'
 import { VaultLocations } from './vault'
 import type {
@@ -63,6 +63,77 @@ const loadRenderer = async (
     await window.loadURL(url.toString())
   } else {
     await window.loadFile(path.join(__dirname, '../dist/index.html'), { query })
+  }
+}
+
+const waitForExportDocument = (window: BrowserWindow): Promise<unknown> =>
+  window.webContents.executeJavaScript(`
+    new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('The note preview did not finish loading.')), 10000)
+      const interval = setInterval(async () => {
+        if (!document.querySelector('[data-export-ready]') || document.querySelector('[data-image-loading]')) return
+        clearInterval(interval)
+        await document.fonts.ready
+        await Promise.all([...document.images].map((image) => image.complete
+          ? undefined
+          : new Promise((done) => {
+              image.addEventListener('load', done, { once: true })
+              image.addEventListener('error', done, { once: true })
+            })))
+        clearTimeout(timeout)
+        resolve(true)
+      }, 25)
+    })
+  `)
+
+const exportNote = async (
+  parent: BrowserWindow,
+  noteId: string,
+  format: 'md' | 'pdf',
+): Promise<void> => {
+  await prepareMainEditor()
+  const note = (await library.list()).notes.find((candidate) => candidate.id === noteId)
+  if (!note) throw new Error('Note not found')
+  const extension = format === 'pdf' ? 'pdf' : 'md'
+  const selection = await dialog.showSaveDialog(parent, {
+    title: `Export ${format === 'pdf' ? 'PDF' : 'Markdown'}`,
+    buttonLabel: 'Export',
+    defaultPath: path.join(app.getPath('documents'), `${safeFileName(note.title, 'Untitled note')}.${extension}`),
+    filters: [{ name: format === 'pdf' ? 'PDF' : 'Markdown', extensions: [extension] }],
+  })
+  if (selection.canceled || !selection.filePath) return
+
+  if (format === 'md') {
+    const source = await library.itemPath('note', noteId)
+    await copyFile(source.absolutePath, selection.filePath)
+    return
+  }
+
+  const printWindow = new BrowserWindow({
+    width: 794,
+    height: 1123,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  })
+  try {
+    secureWindowNavigation(printWindow)
+    await loadRenderer(printWindow, { window: 'export', noteId })
+    await waitForExportDocument(printWindow)
+    const pdf = await printWindow.webContents.printToPDF({
+      pageSize: 'A4',
+      printBackground: true,
+      preferCSSPageSize: true,
+      generateTaggedPDF: true,
+      generateDocumentOutline: true,
+    })
+    await writeFile(selection.filePath, pdf)
+  } finally {
+    if (!printWindow.isDestroyed()) printWindow.destroy()
   }
 }
 
@@ -356,17 +427,23 @@ app.whenReady().then(async () => {
         throw new Error('Invalid library item')
       }
       const itemPath = await library.itemPath(input.kind, input.id)
+      const parentWindow = windowForEvent(event)
       return new Promise((resolve) => {
         let selectedAction: LibraryItemContextAction | undefined
         const choose = (action: LibraryItemContextAction) => () => {
           selectedAction = action
         }
+        const exportAs = (format: 'md' | 'pdf') => () => {
+          void exportNote(parentWindow, input.id, format).catch((error: unknown) => {
+            void dialog.showMessageBox(parentWindow, {
+              type: 'error',
+              title: 'Could Not Export Note',
+              message: error instanceof Error ? error.message : 'The note could not be exported.',
+            })
+          })
+        }
         const sharedItems: MenuItemConstructorOptions[] = [
           { type: 'separator' },
-          {
-            label: 'Copy Unique Path',
-            click: () => clipboard.writeText(itemPath.relativePath),
-          },
           {
             label: 'Show in Finder',
             click: () => shell.showItemInFolder(itemPath.absolutePath),
@@ -379,6 +456,19 @@ app.whenReady().then(async () => {
               {
                 label: 'Copy Link',
                 click: () => clipboard.writeText(`[[${itemPath.relativePath}]]`),
+              },
+              {
+                label: 'Export',
+                submenu: [
+                  {
+                    label: 'PDF…',
+                    click: exportAs('pdf'),
+                  },
+                  {
+                    label: 'Markdown (.md)…',
+                    click: exportAs('md'),
+                  },
+                ],
               },
               ...sharedItems,
               { label: input.pinned ? 'Unpin Note' : 'Pin Note', click: choose('toggle-pin') },

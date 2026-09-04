@@ -1,6 +1,8 @@
 import ReactMarkdown from 'react-markdown'
 import rehypeHighlight from 'rehype-highlight'
+import rehypeKatex from 'rehype-katex'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
 import { Link2 } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
 import { remarkHighlights } from '../lib/remarkHighlights'
@@ -43,8 +45,8 @@ export function MarkdownPreview({
     <article className="markdown-preview" ref={previewRef}>
       {body ? (
         <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkWikiLinks, remarkHighlights]}
-          rehypePlugins={[rehypeHighlight, documentSearchPlugin]}
+          remarkPlugins={[remarkGfm, remarkMath, remarkWikiLinks, remarkHighlights]}
+          rehypePlugins={[rehypeHighlight, documentSearchPlugin, rehypeKatex]}
           components={{
             a: ({ href, children, ...props }) => {
               if (href?.startsWith('#folio-note=')) {

@@ -195,7 +195,7 @@ const isNotebook = (value: unknown): value is Notebook => {
   )
 }
 
-const safeFileName = (value: string, fallback: string): string => {
+export const safeFileName = (value: string, fallback: string): string => {
   const printableValue = [...value.normalize('NFC')]
     .map((character) => (character.charCodeAt(0) < 32 ? '-' : character))
     .join('')

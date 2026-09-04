@@ -2,6 +2,18 @@
 
 All notable changes to Folio are documented here.
 
+## [1.2.0] - 2026-09-04
+
+### Added
+
+- Added KaTeX rendering for inline and block LaTeX in Markdown previews
+- Added note export to Markdown or PDF from the note context menu
+
+### Changed
+
+- Removed the redundant Copy Unique Path context-menu action
+- Added LaTeX and literal-dollar authoring guidance to the Folio MCP server
+
 ## [1.1.0] - 2026-09-04
 
 ### Added
@@ -47,6 +59,7 @@ Folio's first public release.
 - Bundled MCP server with guarded read/write tools for AI agents
 - Apple Silicon macOS packaging as a DMG and ZIP
 
+[1.2.0]: https://github.com/kroist/folio/releases/tag/v1.2.0
 [1.1.0]: https://github.com/kroist/folio/releases/tag/v1.1.0
 [1.0.3]: https://github.com/kroist/folio/releases/tag/v1.0.3
 [1.0.2]: https://github.com/kroist/folio/releases/tag/v1.0.2

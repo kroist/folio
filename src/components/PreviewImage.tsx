@@ -129,6 +129,7 @@ export function PreviewImage({
         ref={canvasRef}
         type="button"
         className="folio-image-canvas"
+        data-image-loading={isAttachment && !dataUrl && !attachmentState.loadError ? true : undefined}
         onClick={openControls}
         aria-label={selected ? 'Close image controls' : 'Edit image layout'}
       >
