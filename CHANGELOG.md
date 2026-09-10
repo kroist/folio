@@ -2,6 +2,14 @@
 
 All notable changes to Folio are documented here.
 
+## [1.2.3] - 2026-09-10
+
+### Fixed
+
+- Keep note titles in sync with the opening Markdown heading, including existing notes and wiki links
+- Hide the duplicate title above the editor and in exports when an opening heading exists
+- Update dependencies to resolve five security audit findings
+
 ## [1.2.2] - 2026-09-04
 
 ### Fixed

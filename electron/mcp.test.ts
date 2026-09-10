@@ -15,7 +15,7 @@ const makeService = async () => {
   const note: Note = {
     id: 'mcp-note-123456',
     notebookId: 'personal',
-    title: 'Agent note',
+    title: 'Plan',
     body: '# Plan\n\nOriginal sentence.\n',
     tags: ['agent'],
     pinned: false,
@@ -46,7 +46,7 @@ describe('Folio MCP service', () => {
     const { service, note } = await makeService()
     const listed = await service.listNotes({ includeDescendants: true, limit: 100 })
     expect(listed.notes[0]).toMatchObject({ id: note.id, title: note.title })
-    expect(listed.notes[0].path).toMatch(/^Personal\/Agent note--/)
+    expect(listed.notes[0].path).toMatch(/^Personal\/Plan--/)
 
     await expect(service.getNote(note.id, 0, 100)).resolves.toMatchObject({
       body: note.body,

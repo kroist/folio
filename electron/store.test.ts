@@ -17,7 +17,7 @@ const legacyNote: Note = {
   id: 'legacy-id-123456',
   notebookId: 'personal',
   title: 'Legacy note',
-  body: '# Original body\n\nStill plain Markdown.\n',
+  body: '# Legacy note\n\nStill plain Markdown.\n',
   tags: ['migration'],
   pinned: true,
   createdAt: '2026-08-10T10:00:00.000Z',
@@ -68,6 +68,31 @@ updatedAt: "2026-08-11T10:00:00.000Z"
 })
 
 describe('LibraryStore Markdown vault', () => {
+  it('syncs heading edits, persisted titles, filenames, and linked notes', async () => {
+    const userDataPath = await makeTemporaryDirectory()
+    const store = new LibraryStore(userDataPath)
+    const note = await store.create()
+    const reference = await store.create({ title: 'Reference' })
+    await store.save({ ...reference, body: 'See [[Untitled note]].' })
+    const result = await store.save({ ...note, body: '# Heading title\n\nBody' })
+    expect(result.note.title).toBe('Heading title')
+    expect(result.linkedNotes[0].body).toContain('/Heading title--')
+    const { absolutePath } = await store.itemPath('note', note.id)
+    expect(path.basename(absolutePath)).toContain('Heading title--')
+    expect(await readFile(absolutePath, 'utf8')).toContain('title: "Heading title"')
+    expect((await new LibraryStore(userDataPath).list()).notes.find((item) => item.id === note.id)?.title)
+      .toBe('Heading title')
+    const renamed = await store.save({ ...result.note, title: 'Renamed' })
+    expect(renamed.note.body).toBe('# Renamed\n\nBody')
+    expect(renamed.note.title).toBe('Renamed')
+    const renamedPath = (await store.itemPath('note', note.id)).absolutePath
+    await writeFile(renamedPath, (await readFile(renamedPath, 'utf8')).replace('# Renamed', '# External heading'))
+    const reloaded = await store.reload()
+    expect(reloaded.notes.find((item) => item.id === note.id)?.title).toBe('External heading')
+    expect(reloaded.notes.find((item) => item.id === reference.id)?.body).toContain('/External heading--')
+    expect((await store.itemPath('note', note.id)).relativePath).toContain('/External heading--')
+  })
+
   it('migrates JSON, writes and moves Markdown notes, and deletes recoverably', async () => {
     const userDataPath = await makeTemporaryDirectory()
     const legacyPath = path.join(userDataPath, 'library.json')

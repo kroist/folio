@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Note } from '../types'
-import { filterAndSortNotes, noteExcerpt, relativeDate, wordCount } from './notes'
+import { filterAndSortNotes, headingTitle, noteExcerpt, relativeDate, wordCount } from './notes'
 
 const makeNote = (overrides: Partial<Note>): Note => ({
   id: 'note-1',
@@ -50,6 +50,17 @@ describe('filterAndSortNotes', () => {
 })
 
 describe('note presentation helpers', () => {
+  it('uses only an opening level-one Markdown heading as the title', () => {
+    expect(headingTitle('# Why the ETH options summary takes about five seconds\n\nMeasured today'))
+      .toBe('Why the ETH options summary takes about five seconds')
+    expect(headingTitle('\r\n  # Heading ###\r\nBody')).toBe('Heading')
+    expect(headingTitle('# C#')).toBe('C#')
+    expect(headingTitle('# ')).toBe('Untitled note')
+    for (const body of ['', '## Subheading', '#hashtag', 'Paragraph\n\n# Later', '```md\n# Code\n```']) {
+      expect(headingTitle(body)).toBeUndefined()
+    }
+  })
+
   it('creates a clean Markdown excerpt', () => {
     expect(noteExcerpt('# Heading\n\nThis is **important**.')).toBe('Heading This is important .')
   })

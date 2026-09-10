@@ -17,7 +17,7 @@ import {
   type FormatKind,
 } from '../lib/editorCommands'
 import { flattenNotebooks } from '../lib/notebooks'
-import { wordCount } from '../lib/notes'
+import { headingTitle, wordCount } from '../lib/notes'
 import { attachmentImageMarkdown } from '../lib/imageMarkdown'
 import { wikiCompletionEdit, type WikiLinkCandidate } from '../lib/wikiLinks'
 import { PenLine, Pin, Trash2 } from './Icon'
@@ -367,13 +367,13 @@ export function EditorWorkspace({
       </header>
 
       <section className="document-header">
-        <input
+        {headingTitle(note.body) === undefined && <input
           className="title-input"
           aria-label="Note title"
           value={note.title}
           onChange={(event) => patchNote({ title: event.target.value })}
           placeholder="Untitled note"
-        />
+        />}
         <div className="metadata-row">
           <select
             aria-label="Notebook"

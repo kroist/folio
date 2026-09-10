@@ -1,5 +1,12 @@
 import type { LibraryScope, Note, NoteSort } from '../types'
 
+export const openingHeading = /^(?:[ \t]*\r?\n)* {0,3}#(?:[ \t]+([^\r\n]*)|(?=\r?\n|$))/
+
+export const headingTitle = (body: string): string | undefined => {
+  const match = openingHeading.exec(body)
+  return match ? (match[1] ?? '').replace(/(?:^|[ \t]+)#+[ \t]*$/, '').trim().slice(0, 240) || 'Untitled note' : undefined
+}
+
 export const filterAndSortNotes = (
   notes: Note[],
   scope: LibraryScope,

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { access, cp, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { headingTitle, openingHeading } from '../src/lib/notes'
 import type {
   CreateNoteInput,
   CreateNotebookInput,
@@ -776,12 +777,17 @@ export class LibraryStore {
       const current = this.data!.notes[index]
       const notebookChanged = current.notebookId !== update.notebookId
       const pinnedChanged = current.pinned !== update.pinned
-      const nextTitle = update.title.trim().slice(0, 240) || 'Untitled note'
+      let body = update.body
+      const requestedTitle = update.title.trim().slice(0, 240) || 'Untitled note'
+      if (body === current.body && requestedTitle !== current.title && headingTitle(body) !== undefined) {
+        body = body.replace(openingHeading, () => `# ${requestedTitle}`)
+      }
+      const nextTitle = headingTitle(body) ?? requestedTitle
       const titleChanged = current.title !== nextTitle
       const draftNote: Note = {
         ...current,
         title: nextTitle,
-        body: update.body,
+        body,
         notebookId: update.notebookId,
         tags: [...new Set(update.tags.map((tag) => tag.trim()).filter(Boolean))].slice(0, 20),
         pinned: update.pinned,
@@ -871,6 +877,7 @@ export class LibraryStore {
         notes,
         noteOrder: await this.readNoteOrder(notes, metadata.notebooks),
       }
+      await this.syncHeadingTitles()
       return
     }
 
@@ -883,6 +890,27 @@ export class LibraryStore {
     }
     await this.writeInitialVault(initialData)
     this.data = initialData
+    await this.syncHeadingTitles()
+  }
+
+  private async syncHeadingTitles(): Promise<void> {
+    const replacements = new Map<string, string>()
+    for (const note of this.data!.notes) {
+      const title = headingTitle(note.body)
+      if (title === undefined || title === note.title) continue
+      const renamed = { ...note, title }
+      const target = noteWikiLinkTarget(renamed, this.data!.notebooks)
+      for (const previous of [note.title, noteWikiLinkTarget(note, this.data!.notebooks), legacyNoteWikiLinkTarget(note, this.data!.notebooks)]) {
+        replacements.set(normalizeWikiLinkTarget(previous), target)
+      }
+      const currentPath = this.notePaths.get(note.id)!
+      const nextPath = this.pathForNote(renamed)
+      await atomicWrite(currentPath, serializeNote(renamed))
+      if (currentPath !== nextPath) await rename(currentPath, nextPath)
+      this.notePaths.set(note.id, nextPath)
+      note.title = title
+    }
+    await this.rewriteLinks(replacements, new Date().toISOString())
   }
 
   private async readNoteOrder(notes: Note[], notebooks: Notebook[]): Promise<NoteOrder> {

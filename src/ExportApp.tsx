@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { MarkdownPreview } from './components/MarkdownPreview'
+import { headingTitle } from './lib/notes'
 import type { Note } from './types'
 
 export function ExportDocument({ note }: { note: Note }) {
-  const bodyTitle = /^\s*#\s+(.+?)\s*(?:\r?\n|$)/.exec(note.body)?.[1]
   return (
     <main className="export-document" data-export-ready>
-      {bodyTitle !== note.title.trim() && (
+      {headingTitle(note.body) === undefined && (
         <h1 className="export-title">{note.title || 'Untitled note'}</h1>
       )}
       <MarkdownPreview

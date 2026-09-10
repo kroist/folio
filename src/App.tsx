@@ -4,7 +4,7 @@ import { EditorWorkspace } from './components/EditorWorkspace'
 import { LibrarySidebar } from './components/LibrarySidebar'
 import { NoteList } from './components/NoteList'
 import { notebookDescendantIds, notebookPathLabel } from './lib/notebooks'
-import { filterAndSortNotes } from './lib/notes'
+import { filterAndSortNotes, headingTitle } from './lib/notes'
 import {
   parseThemePreference,
   resolveThemePreference,
@@ -498,6 +498,7 @@ export function App() {
   }, [])
 
   const updateNote = (nextNote: Note) => {
+    nextNote = { ...nextNote, title: headingTitle(nextNote.body) ?? nextNote.title }
     setLibrary((current) => ({
       ...current,
       notes: current.notes.map((note) => (note.id === nextNote.id ? nextNote : note)),
