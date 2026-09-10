@@ -1038,6 +1038,9 @@ kbd { border: 0; color: var(--text-faint); background: transparent; font-family:
 .markdown-preview code { padding: 0.14em 0.34em; border-radius: 4px; background: var(--preview-inline-code); font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.86em; }
 .markdown-preview pre { overflow-x: auto; padding: 15px 17px; border: 1px solid var(--line); border-radius: 8px; background: var(--preview-code-block); color: var(--preview-code-text); box-shadow: 0 3px 12px color-mix(in srgb, var(--shadow-color) 40%, transparent); }
 .markdown-preview pre code { padding: 0; background: transparent; color: inherit; }
+.mermaid-diagram { margin: 1em 0; }
+.mermaid-diagram > img { display: block; max-width: 100%; margin: auto; padding: 12px; background: white; }
+.mermaid-diagram figcaption { color: var(--muted); font: 12px/1.5 var(--font-sans); white-space: pre-wrap; }
 .markdown-preview .hljs-keyword,
 .markdown-preview .hljs-selector-tag,
 .markdown-preview .hljs-meta { color: var(--syntax-keyword); }

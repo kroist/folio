@@ -2,6 +2,13 @@
 
 All notable changes to Folio are documented here.
 
+## [1.3.0] - 2026-09-10
+
+### Added
+
+- Render fenced Mermaid diagrams in Markdown previews and PDF exports
+- Show diagram source and an error for invalid Mermaid syntax, with live recovery while editing
+
 ## [1.2.3] - 2026-09-10
 
 ### Fixed

@@ -1,15 +1,26 @@
-import ReactMarkdown from 'react-markdown'
+import ReactMarkdown, { type ExtraProps } from 'react-markdown'
 import rehypeHighlight from 'rehype-highlight'
 import rehypeKatex from 'rehype-katex'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import { Link2 } from 'lucide-react'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, type ComponentProps } from 'react'
+import { toString } from 'hast-util-to-string'
 import { remarkHighlights } from '../lib/remarkHighlights'
 import { remarkWikiLinks } from '../lib/remarkWikiLinks'
 import { createRehypeDocumentSearch } from '../lib/rehypeDocumentSearch'
 import { replaceMarkdownRange } from '../lib/imageMarkdown'
 import { PreviewImage } from './PreviewImage'
+import { MermaidDiagram } from './MermaidDiagram'
+
+function MarkdownCodeBlock({ node, children, ...props }: ComponentProps<'pre'> & ExtraProps) {
+  const code = node?.children[0]
+  if (code?.type === 'element' && Array.isArray(code.properties.className) && code.properties.className.includes('language-mermaid')) {
+    const source = toString(code)
+    return <MermaidDiagram key={source} source={source} />
+  }
+  return <pre {...props}>{children}</pre>
+}
 
 interface MarkdownPreviewProps {
   body: string
@@ -46,8 +57,9 @@ export function MarkdownPreview({
       {body ? (
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkMath, remarkWikiLinks, remarkHighlights]}
-          rehypePlugins={[rehypeHighlight, documentSearchPlugin, rehypeKatex]}
+          rehypePlugins={[[rehypeHighlight, { plainText: ['mermaid'] }], documentSearchPlugin, rehypeKatex]}
           components={{
+            pre: MarkdownCodeBlock,
             a: ({ href, children, ...props }) => {
               if (href?.startsWith('#folio-note=')) {
                 const title = decodeURIComponent(href.slice('#folio-note='.length))

@@ -71,7 +71,7 @@ const waitForExportDocument = (window: BrowserWindow): Promise<unknown> =>
     new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('The note preview did not finish loading.')), 10000)
       const interval = setInterval(async () => {
-        if (!document.querySelector('[data-export-ready]') || document.querySelector('[data-image-loading]')) return
+        if (!document.querySelector('[data-export-ready]') || document.querySelector('[data-image-loading], [data-diagram-loading]')) return
         clearInterval(interval)
         await document.fonts.ready
         await Promise.all([...document.images].map((image) => image.complete
