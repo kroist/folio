@@ -19,6 +19,22 @@ afterEach(async () => {
 })
 
 describe('VaultLocations', () => {
+  it('remembers the export folder across restarts and falls back when unavailable', async () => {
+    const root = await makeTemporaryDirectory()
+    const userDataPath = path.join(root, 'user-data')
+    const locations = new VaultLocations(userDataPath, root)
+    const directory = path.join(root, 'exports')
+    await mkdir(directory)
+    expect(await locations.readExportDirectory(root)).toBe(root)
+    await locations.writeExportDirectory(directory)
+    const restarted = new VaultLocations(userDataPath, root)
+    expect(await restarted.readExportDirectory(root)).toBe(directory)
+    await rm(directory, { recursive: true })
+    expect(await restarted.readExportDirectory(root)).toBe(root)
+    await writeFile(directory, 'not a directory')
+    expect(await restarted.readExportDirectory(root)).toBe(root)
+  })
+
   it('persists one canonical path and recognizes iCloud Drive storage', async () => {
     const root = await makeTemporaryDirectory()
     const userDataPath = path.join(root, 'user-data')

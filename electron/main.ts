@@ -98,10 +98,13 @@ const exportNote = async (
   const selection = await dialog.showSaveDialog(parent, {
     title: `Export ${format === 'pdf' ? 'PDF' : 'Markdown'}`,
     buttonLabel: 'Export',
-    defaultPath: path.join(app.getPath('documents'), `${safeFileName(note.title, 'Untitled note')}.${extension}`),
+    defaultPath: path.join(await vaultLocations.readExportDirectory(app.getPath('documents')), `${safeFileName(note.title, 'Untitled note')}.${extension}`),
     filters: [{ name: format === 'pdf' ? 'PDF' : 'Markdown', extensions: [extension] }],
   })
   if (selection.canceled || !selection.filePath) return
+  await vaultLocations.writeExportDirectory(path.dirname(selection.filePath)).catch((error: unknown) => {
+    console.warn('Could not remember the export folder.', error)
+  })
 
   if (format === 'md') {
     const source = await library.itemPath('note', noteId)

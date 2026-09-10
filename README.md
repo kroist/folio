@@ -4,9 +4,9 @@ A calm, local-first Markdown workspace for macOS. Notes are ordinary Markdown fi
 
 ## Download
 
-Download **Folio 1.3.0 for Apple Silicon** from the [GitHub release](https://github.com/kroist/folio/releases/tag/v1.3.0). Open the DMG and drag Folio into Applications.
+Download **Folio 1.3.1 for Apple Silicon** from the [GitHub release](https://github.com/kroist/folio/releases/tag/v1.3.1). Open the DMG and drag Folio into Applications.
 
-The 1.3.0 build is ad-hoc signed but not Apple-notarized. On first launch, macOS may require you to control-click Folio, choose **Open**, and confirm. Intel Macs are not supported by this build.
+The 1.3.1 build is ad-hoc signed but not Apple-notarized. On first launch, macOS may require you to control-click Folio, choose **Open**, and confirm. Intel Macs are not supported by this build.
 
 ## Features
 

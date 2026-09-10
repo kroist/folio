@@ -66,6 +66,19 @@ export class VaultLocations {
     await atomicWrite(this.preferencesPath, JSON.stringify(preferences, null, 2))
   }
 
+  async readExportDirectory(fallback: string): Promise<string> {
+    try {
+      const directory = await readFile(path.join(this.userDataPath, 'export-directory'), 'utf8')
+      return path.isAbsolute(directory) && (await stat(directory)).isDirectory() ? directory : fallback
+    } catch {
+      return fallback
+    }
+  }
+
+  async writeExportDirectory(directory: string): Promise<void> {
+    await atomicWrite(path.join(this.userDataPath, 'export-directory'), path.resolve(directory))
+  }
+
   async info(vaultPath: string): Promise<VaultInfo> {
     const resolvedPath = path.resolve(vaultPath)
     const relativeToICloud = path.relative(this.iCloudRoot, resolvedPath)

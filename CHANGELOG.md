@@ -2,6 +2,13 @@
 
 All notable changes to Folio are documented here.
 
+## [1.3.1] - 2026-09-10
+
+### Fixed
+
+- Remember the last folder chosen for PDF and Markdown exports across app restarts
+- Fall back to Documents when the remembered export folder is unavailable
+
 ## [1.3.0] - 2026-09-10
 
 ### Added
